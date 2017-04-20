@@ -19,8 +19,10 @@ namespace Game_GUI
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
+    /// 
     public partial class MainWindow : Window
     {
+        private Random rnd = new Random();
         private Controller controller;
         private Speler gebruiker, computer;
 
@@ -64,9 +66,10 @@ namespace Game_GUI
 
             Nieuwe_Ronde();
 
+            sldPower.IsSnapToTickEnabled = true;
             sldPower.IsSelectionRangeEnabled = true;
             sldPower.SelectionStart = 0;
-            sldPower.SelectionEnd = 100;
+            sldPower.SelectionEnd = gebruiker.Power;
 
             txtMonsterName.Visibility = Visibility.Hidden;
             btnStart.Visibility = Visibility.Hidden;
@@ -88,30 +91,52 @@ namespace Game_GUI
 
         private void btnValAan_Click(object sender, RoutedEventArgs e)
         {
-            double attackValue;
-            attackValue = sldPower.Value;
+            double attackValue = sldPower.Value;
             controller.Spel.Ronde.Last().MoveSpeler = gebruiker.Aanvallen(computer, attackValue);
 
-            SetLimits_sldPower(attackValue);
             sldPower.Value = 0;
+            sldPower.SelectionEnd = gebruiker.Power;
+
             Computer_Move();
             Nieuwe_Ronde();
         }
 
         private void Computer_Move()
         {
-            computer.Aanvallen(gebruiker, 10);
+            double attackValue;
+
+            do
+            {
+                attackValue = rnd.Next(10,51);
+            } while (attackValue >= computer.Power);
+            controller.Spel.Ronde.Last().MoveComputer = computer.Aanvallen(gebruiker, attackValue);
         }
 
         private void Nieuwe_Ronde()
         {
-            lblSpeler1Health.Content = gebruiker.Gezondheid;
-            lblSpeler2Health.Content = computer.Gezondheid;
-            controller.Spel.NieuweRonde();
-            lblRondeOutput.Content = controller.Spel.Ronde.Last().RondeID;
+            if (gebruiker.Gezondheid == 0 || computer.Gezondheid == 0)
+            {
+                lblSpeler1Health.Content = gebruiker.Gezondheid;
+                lblSpeler2Health.Content = computer.Gezondheid;
+
+                if (gebruiker.Won)
+                {
+                    MessageBox.Show("Het spel werd gewonnen door: " + gebruiker.ToString() + "\n in " + controller.Spel.Ronde.Last().RondeID + " rondes");
+                }
+                else
+                {
+                    MessageBox.Show("Het spel werd gewonnen door: " + computer.ToString() + "\n in " + controller.Spel.Ronde.Last().RondeID + " rondes");
+                }
+            }
+            else {
+                lblSpeler1Health.Content = gebruiker.Gezondheid;
+                lblSpeler2Health.Content = computer.Gezondheid;
+                controller.Spel.NieuweRonde();
+                lblRondeOutput.Content = controller.Spel.Ronde.Last().RondeID;
+            }
         }
 
-        private void SetLimits_sldPower(double attack)
+        private void SetLimits(double attack)
         {
             double max;
             max = sldPower.SelectionEnd - attack;
